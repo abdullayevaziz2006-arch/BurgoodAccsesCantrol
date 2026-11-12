@@ -12,10 +12,6 @@ workflows:
         script: |
           cd flutter_app
           flutter pub get
-      - name: Install CocoaPods
-        script: |
-          cd flutter_app/ios
-          pod install
       - name: Build iOS unsigned app & package IPA (for Sideloadly / AltStore)
         script: |
           cd flutter_app
