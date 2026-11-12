@@ -1,0 +1,49 @@
+# Secrets, keys, and environment files
+*.env
+server.env
+*.pem
+*.key
+*.p12
+*.mobileprovision
+vps_migration_backup/
+
+# Databases and uploads
+*.db
+*.db.*
+*.backup
+*.sqlite
+*.sqlite3
+uploads/
+test_face_download.jpg
+
+# Large binaries, archives, and installers
+*.apk
+*.aab
+*.ipa
+*.iso
+*.zip
+*.tar.gz
+*.exe
+apk/
+iso_staging/
+Burgood_Test_Paketi/
+Burgood_Design_Kit/
+
+# Build outputs and caches
+build/
+dist/
+**/build/
+**/dist/
+**/node_modules/
+**/__pycache__/
+*.pyc
+.venv/
+venv/
+scratch/
+scratch_*
+
+# IDE & agent files
+.gemini/
+.vscode/
+.idea/
+*.log

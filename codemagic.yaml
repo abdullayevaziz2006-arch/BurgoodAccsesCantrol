@@ -1,0 +1,47 @@
+workflows:
+  ios-unsigned-test:
+    name: iOS Build (Codemagic Mac)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          cd flutter_app
+          flutter pub get
+      - name: Install CocoaPods
+        script: |
+          cd flutter_app/ios
+          pod install
+      - name: Build iOS unsigned app & package IPA (for Sideloadly / AltStore)
+        script: |
+          cd flutter_app
+          flutter build ios --release --no-codesign
+          mkdir -p build/ios/ipa/Payload
+          cp -r build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa
+          zip -r ../../../burgood-ios-unsigned.ipa Payload
+    artifacts:
+      - flutter_app/burgood-ios-unsigned.ipa
+      - flutter_app/build/ios/iphoneos/Runner.app
+
+  android-apk:
+    name: Android APK Build
+    max_build_duration: 30
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          cd flutter_app
+          flutter pub get
+      - name: Build Android Release APK
+        script: |
+          cd flutter_app
+          flutter build apk --release
+    artifacts:
+      - flutter_app/build/app/outputs/flutter-apk/app-release.apk

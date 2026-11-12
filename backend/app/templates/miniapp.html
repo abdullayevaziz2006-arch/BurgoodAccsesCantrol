@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Burgood Master Mini App</title>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#070c18',
+              card: '#0c162c',
+              border: '#152649',
+              blue: '#0084ff',
+              hover: '#0073e0',
+              cyan: '#06b6d4'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #070c18;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Hide scrollbars for slick mobile view */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    .active-tab {
+      background-color: #0084ff;
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(0, 132, 255, 0.35);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col select-none pb-20">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="sticky top-0 z-30 bg-[#070c18]/90 backdrop-blur-md border-b border-[#152649] px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-[#0c162c] border border-cyan-500/30 flex items-center justify-center p-1 shadow-md">
+        <img src="/logo.png" alt="Burgood" class="w-full h-full object-contain" onerror="this.src='/uploads/org_1_logo.png'">
+      </div>
+      <div>
+        <h1 class="font-extrabold text-sm leading-tight text-white flex items-center gap-1">
+          Burgood <span class="text-cyan-400">Master</span>
+        </h1>
+        <span class="text-[10px] text-slate-400 font-medium">Boshqaruv Markazi</span>
+      </div>
+    </div>
+    <div id="superadminBadge" class="px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-[11px] font-bold text-cyan-400 flex items-center gap-1">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Superadmin
+    </div>
+  </header>
+
+  <!-- ================= TAB NAVIGATION ================= -->
+  <div class="p-3 bg-[#0a1224] border-b border-[#152649] flex gap-2">
+    <button onclick="switchTab('orgs')" id="tabBtn-orgs" class="flex-1 py-2 text-xs font-bold rounded-xl transition active-tab">
+      🏢 Obyektlar
+    </button>
+    <button onclick="switchTab('roles')" id="tabBtn-roles" class="flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white bg-[#0f1d38]">
+      👥 Rollar & Foydalanuvchilar
+    </button>
+    <button onclick="switchTab('apps')" id="tabBtn-apps" class="flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white bg-[#0f1d38]">
+      📱 Ilovalar (APK/PC)
+    </button>
+  </div>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="flex-1 p-3 overflow-y-auto">
+
+    <!-- ---------------------------------------------------- -->
+    <!-- TAB 1: OBYEKTLAR (UNIVERSITETLAR / KORXONALAR)       -->
+    <!-- ---------------------------------------------------- -->
+    <div id="tabContent-orgs" class="space-y-3">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Obyektlar Ro'yxati</span>
+        <button onclick="openOrgModal()" class="px-3 py-1.5 rounded-xl bg-[#0084ff] hover:bg-[#0073e0] text-white text-xs font-bold shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition">
+          <span>➕</span> Yangi Obyekt
+        </button>
+      </div>
+
+      <!-- Organizations Loading State -->
+      <div id="orgsLoading" class="py-12 text-center text-slate-400 text-xs">
+        <div class="inline-block w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mb-2"></div>
+        <div>Obyektlar yuklanmoqda...</div>
+      </div>
+
+      <!-- Organizations List Container -->
+      <div id="orgsList" class="space-y-3 hidden"></div>
+    </div>
+
+    <!-- ---------------------------------------------------- -->
+    <!-- TAB 2: ROLLAR VA FOYDALANUVCHILAR                    -->
+    <!-- ---------------------------------------------------- -->
+    <div id="tabContent-roles" class="space-y-4 hidden">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider block">Foydalanuvchilar & Rollar</span>
+          <span class="text-[10px] text-cyan-400">Desktop, APK va Bot kirish login/parollari</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="loadAccountsAndUsers()" title="Yangilash" class="p-2 rounded-xl bg-[#0f1d38] border border-[#172c54] text-slate-300 hover:text-white transition">
+            🔄
+          </button>
+          <button onclick="openAccountModal()" class="px-3 py-2 rounded-xl bg-[#0084ff] hover:bg-[#0073e0] text-white text-xs font-bold shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition">
+            <span>➕</span> Yangi Foydalanuvchi
+          </button>
+        </div>
+      </div>
+
+      <!-- Accounts Loading State -->
+      <div id="accountsLoading" class="py-12 text-center text-slate-400 text-xs">
+        <div class="inline-block w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mb-2"></div>
+        <div>Foydalanuvchilar yuklanmoqda...</div>
+      </div>
+
+      <!-- Accounts List Container -->
+      <div id="accountsList" class="space-y-3 hidden"></div>
+
+      <!-- Telegram Bot Pending/Joined Users sub-section -->
+      <div class="pt-4 border-t border-[#152649] space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+            <span>🤖</span> Telegram Bot Orqali Kirganlar
+          </span>
+          <span id="telegramUsersCountBadge" class="text-[10px] text-cyan-400 font-mono"></span>
+        </div>
+        <div id="telegramUsersList" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- ---------------------------------------------------- -->
+    <!-- TAB 3: ILOVALAR (APK VA DESKTOP)                     -->
+    <!-- ---------------------------------------------------- -->
+    <div id="tabContent-apps" class="space-y-4 hidden">
+      
+      <!-- Android App Card -->
+      <div class="p-4 rounded-2xl bg-[#0c162c] border border-[#172c54] shadow-md space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-2xl shadow-lg shadow-emerald-950">
+            🤖
+          </div>
+          <div class="flex-1">
+            <h3 class="font-extrabold text-sm text-white">BurgoodAccessControl.apk</h3>
+            <p class="text-[11px] text-emerald-400 font-medium">Android Telefonlar uchun Rasmiy Ilova</p>
+          </div>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Mijozlaringiz yoki xodimlaringizga ushbu APK ilovani taqdim etishingiz mumkin. U to'liq ekranli ishlaydi va o'z serveringizga ulanadi.
+        </p>
+        <div class="pt-1 flex gap-2">
+          <a href="/uploads/BurgoodAccessControl.apk" download class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs text-center shadow-lg shadow-emerald-900/40 transition flex items-center justify-center gap-1.5">
+            <span>📥</span> APK Yuklab Olish (11.9 MB)
+          </a>
+        </div>
+      </div>
+
+      <!-- Desktop Windows App Card -->
+      <div class="p-4 rounded-2xl bg-[#0c162c] border border-[#172c54] shadow-md space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-2xl shadow-lg shadow-blue-950">
+            🖥
+          </div>
+          <div class="flex-1">
+            <h3 class="font-extrabold text-sm text-white">Desktop Windows Dasturi</h3>
+            <p class="text-[11px] text-cyan-400 font-medium">BurgoodAccessControl.exe</p>
+          </div>
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Mijoz kompyuterida hech qanday qo'shimcha Python yoki dastur o'rnatilishi shart emas. <b>Setup_Boshqa_Kompyuterga.bat</b> fayli orqali bir bosishda ish stoliga o'rnatiladi.
+        </p>
+      </div>
+
+      <!-- Info Box -->
+      <div class="p-3.5 rounded-xl bg-blue-950/30 border border-blue-500/20 text-xs text-slate-300 space-y-1">
+        <div class="font-bold text-cyan-400 flex items-center gap-1.5">
+          <span>💡</span> Eslatma:
+        </div>
+        <p>Barcha ilovalarda (Desktop, Bot va APK) har bir universitet o'zining siz kiritgan maxsus login, paroli va logotipi bilan ishlaydi.</p>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= ORG CREATE/EDIT MODAL ================= -->
+  <div id="orgModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity">
+    <div class="w-full max-w-lg bg-[#0c162c] border border-[#1b3464] rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-[#172c54] pb-3">
+        <h3 id="orgModalTitle" class="font-extrabold text-sm text-white flex items-center gap-2">
+          🏢 Yangi Obyekt Qo'shish
+        </h3>
+        <button onclick="closeOrgModal()" class="w-7 h-7 rounded-full bg-[#152649] text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <form id="orgForm" onsubmit="handleOrgFormSubmit(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="formOrgId" value="">
+
+        <!-- Org Type -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Obyekt Turi:</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#070c18] border border-[#172c54] cursor-pointer hover:border-cyan-400 transition">
+              <input type="radio" name="formOrgType" id="orgTypeUniversity" value="university" checked onchange="setOrgTypeInModal('university')" class="text-blue-600 focus:ring-0">
+              <div>
+                <div class="text-white font-bold text-xs">🎓 Universitet / Maktab</div>
+                <div class="text-[10px] text-slate-400">Talabalar, Guruhlar, Tyutorlar</div>
+              </div>
+            </label>
+            <label class="flex items-center gap-2 p-2.5 rounded-xl bg-[#070c18] border border-[#172c54] cursor-pointer hover:border-cyan-400 transition">
+              <input type="radio" name="formOrgType" id="orgTypeCompany" value="company" onchange="setOrgTypeInModal('company')" class="text-blue-600 focus:ring-0">
+              <div>
+                <div class="text-white font-bold text-xs">🏢 Idora / Tashkilot</div>
+                <div class="text-[10px] text-slate-400">Xodimlar, Bo'limlar, Oylik Tabel</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Name -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Obyekt Nomi (Universitet / Korxona):</label>
+          <input type="text" id="formOrgName" required placeholder="Masalan: Urganch Davlat Universiteti yoki Oltin Voha MCHJ" class="w-full px-3.5 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+        </div>
+
+        <!-- Code & Address -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Qisqa Kod:</label>
+            <input type="text" id="formOrgCode" placeholder="URDU" class="w-full px-3.5 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Manzil:</label>
+            <input type="text" id="formOrgAddress" placeholder="Urganch shahri" class="w-full px-3.5 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+          </div>
+        </div>
+
+        <!-- Credentials (Login & Parol for Desktop and APK) -->
+        <div class="p-3 rounded-xl bg-[#070c18] border border-[#1a3360] space-y-2">
+          <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block">Desktop va APK Kirish Ma'lumotlari:</span>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-400 mb-1">Admin Login:</label>
+              <input type="text" id="formOrgLogin" required placeholder="urdu_admin" class="w-full px-3 py-2 rounded-lg bg-[#0b1427] border border-[#1c3666] text-white focus:outline-none focus:border-cyan-400">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Admin Parol:</label>
+              <input type="text" id="formOrgPassword" required placeholder="parol123" class="w-full px-3 py-2 rounded-lg bg-[#0b1427] border border-[#1c3666] text-white focus:outline-none focus:border-cyan-400">
+            </div>
+          </div>
+        </div>
+
+        <!-- Enabled Modules -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Qo'llaniladigan Dasturlar (Modullar):</label>
+          <div class="grid grid-cols-2 gap-2 p-3 rounded-xl bg-[#070c18] border border-[#172c54]">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="modDashboard" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">Asosiy Panel</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="modAttendance" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">Davomat Tizimi</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="modStaff" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">Xodimlar Bo'limi</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="modStudents" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">Talabalar Bo'limi</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="modStructure" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">Kafedra & Guruh</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="modSettings" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">Turniket Sozlamalari</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Logo Upload -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Maxsus Logotip Rasmi (Ixtiyoriy):</label>
+          <input type="file" id="formOrgLogoFile" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#152649] file:text-cyan-400 hover:file:bg-[#1a3160] cursor-pointer">
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="closeOrgModal()" class="flex-1 py-2.5 rounded-xl bg-[#152649] text-slate-300 font-bold hover:bg-[#1c325e] transition">
+            Bekor qilish
+          </button>
+          <button type="submit" id="formOrgSubmitBtn" class="flex-1 py-2.5 rounded-xl bg-[#0084ff] text-white font-bold hover:bg-[#0073e0] shadow-md shadow-blue-500/20 transition">
+            Saqlash
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= NEW / EDIT ACCOUNT MODAL ================= -->
+  <div id="accountModal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity">
+    <div class="w-full max-w-lg bg-[#0c162c] border border-[#1b3464] rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[92vh] overflow-y-auto">
+      
+      <div class="flex items-center justify-between border-b border-[#172c54] pb-3">
+        <h3 id="accountModalTitle" class="font-extrabold text-sm text-white flex items-center gap-2">
+          👤 Yangi Foydalanuvchi Qo'shish
+        </h3>
+        <button onclick="closeAccountModal()" class="w-7 h-7 rounded-full bg-[#152649] text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <form id="accountForm" onsubmit="handleAccountFormSubmit(event)" class="space-y-3.5 text-xs">
+        <input type="hidden" id="formAccId" value="">
+
+        <!-- Full Name -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">F.I.SH (Xodim yoki Mas'ul ismi):</label>
+          <input type="text" id="formAccFullName" required placeholder="Masalan: Alisher Qodirov (HR Boshlig'i)" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+        </div>
+
+        <!-- Organization -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Tegishli Obyekt (Universitet / Korxona):</label>
+          <select id="formAccOrg" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="0">Tanlang...</option>
+          </select>
+        </div>
+
+        <!-- Role Select -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Tizimdagi Roli:</label>
+          <select id="formAccRole" onchange="handleAccRoleChange()" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="direktor">👔 Bosh Direktor (Tashkilot xodimlari, davomat va tabel)</option>
+            <option value="buxgalter">🧮 Bosh Buxgalter (Oylik Tabel & Davomat)</option>
+            <option value="otdel_kadr">💼 Otdel Kadr (HR — Faqat xodimlarni ko'radi)</option>
+            <option value="admin">👑 Bosh Admin / Rahbariyat</option>
+            <option value="tutor">🎓 Tyutor (Universitet — Faqat o'z guruhi)</option>
+            <option value="dekan">🏛 Dekan (Universitet — Fakultet)</option>
+            <option value="operator">🛡 Nazoratchi / Operator</option>
+          </select>
+        </div>
+
+        <!-- Dynamic Group (for Tutor) -->
+        <div id="accGroupContainer" class="hidden">
+          <label class="block text-slate-400 font-semibold mb-1">Tyutor guruhi:</label>
+          <select id="formAccGroup" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="0">Guruhni tanlang...</option>
+          </select>
+        </div>
+
+        <!-- Dynamic Faculty (for Dean) -->
+        <div id="accFacultyContainer" class="hidden">
+          <label class="block text-slate-400 font-semibold mb-1">Dekan fakulteti:</label>
+          <select id="formAccFaculty" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="0">Fakultetni tanlang...</option>
+          </select>
+        </div>
+
+        <!-- Allowed Applications -->
+        <div class="p-3 rounded-xl bg-[#070c18] border border-[#152649] space-y-2">
+          <div class="text-slate-300 font-bold flex items-center justify-between">
+            <span>📲 Ruxsat berilgan Dasturlar:</span>
+            <span class="text-[10px] text-cyan-400 font-normal">Foydalanuvchi kira oladigan ilovalar</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="flex items-center gap-1.5 p-2 rounded-lg bg-[#0c162c] border border-[#172c54] cursor-pointer text-slate-200">
+              <input type="checkbox" id="accAppDesktop" checked onchange="handleAppSelectionChange()" class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-[11px] font-medium">🖥 Desktop</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-2 rounded-lg bg-[#0c162c] border border-[#172c54] cursor-pointer text-slate-200">
+              <input type="checkbox" id="accAppAndroid" checked onchange="handleAppSelectionChange()" class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-[11px] font-medium">📱 APK</span>
+            </label>
+            <label class="flex items-center gap-1.5 p-2 rounded-lg bg-[#0c162c] border border-[#172c54] cursor-pointer text-slate-200">
+              <input type="checkbox" id="accAppBot" checked onchange="handleAppSelectionChange()" class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-[11px] font-medium">🤖 Bot</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Allowed Modules -->
+        <div class="p-3 rounded-xl bg-[#070c18] border border-[#152649] space-y-2">
+          <div class="text-slate-300 font-bold flex items-center justify-between">
+            <span>🧩 Ruxsat berilgan Modullar:</span>
+            <span class="text-[10px] text-cyan-400 font-normal">Dastur ichida ko'rinadigan bo'limlar</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="accModAttendance" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">⏱ Davomat Monitoringi</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="accModStaff" checked class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">👨‍💼 Xodimlar (Staff)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer" id="accModStudentsWrapper">
+              <input type="checkbox" id="accModStudents" class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">👨‍🎓 Talabalar (Students)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="accModStructure" class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">🏛 Fakultet & Kafedra</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer col-span-2">
+              <input type="checkbox" id="accModSettings" class="rounded border-slate-600 text-blue-600 focus:ring-0">
+              <span class="text-slate-300">⚙️ Sozlamalar & Turniketlar</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Credentials: Login & Password (Faqat Desktop yoki APK tanlanganda chiqadi) -->
+        <div id="accCredentialsContainer" class="p-3.5 rounded-xl bg-[#070c18] border border-cyan-500/40 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-cyan-400 font-bold flex items-center gap-1.5 text-xs">
+              <span>🔑</span> Desktop va APK Kirish Ma'lumotlari:
+            </span>
+            <button type="button" onclick="generateRandomCredentials()" class="text-[10px] font-bold text-cyan-300 bg-cyan-500/20 px-2 py-1 rounded-lg hover:bg-cyan-500/30 transition flex items-center gap-1">
+              🎲 Avto Yaratish
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Login (Username):</label>
+              <input type="text" id="formAccUsername" placeholder="kadr_urgu" class="w-full px-3 py-2 rounded-xl bg-[#0c162c] border border-[#172c54] text-white font-mono focus:outline-none focus:border-cyan-400">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-semibold mb-1">Parol (Password):</label>
+              <input type="text" id="formAccPassword" placeholder="Burgood2026!" class="w-full px-3 py-2 rounded-xl bg-[#0c162c] border border-[#172c54] text-white font-mono focus:outline-none focus:border-cyan-400">
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-400 block">Foydalanuvchi kompyuter dasturiga yoki mobil APK ilovaga ushbu login/parol orqali kiradi.</span>
+        </div>
+
+        <!-- Telegram Bot Biriktirish (Faqat Bot tanlanganda chiqadi) -->
+        <div id="accTelegramContainer" class="p-3.5 rounded-xl bg-[#070c18] border border-purple-500/40 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-purple-400 font-bold flex items-center gap-1.5 text-xs">
+              <span>🤖</span> Telegram Bot Biriktirish:
+            </span>
+            <span id="accTelegramRequiredBadge" class="text-[10px] text-purple-300 font-mono font-bold px-1.5 py-0.5 rounded bg-purple-900/40">
+              * Majburiy
+            </span>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Telegram Chat ID yoki Username:</label>
+            <input type="text" id="formAccTelegram" placeholder="Masalan: 5359473152 yoki @username" class="w-full px-3 py-2 rounded-xl bg-[#0c162c] border border-[#172c54] text-white font-mono focus:outline-none focus:border-purple-400">
+            <span class="text-[10px] text-slate-400 mt-1 block">Foydalanuvchi botga (@BurgoodAccsesCantrol_bot) kirganida tizim uni ushbu ID orqali taniydi.</span>
+          </div>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeAccountModal()" class="flex-1 py-2.5 rounded-xl bg-[#152649] text-slate-300 font-bold hover:bg-[#1c325e] transition">
+            Bekor qilish
+          </button>
+          <button type="submit" id="formAccSubmitBtn" class="flex-1 py-2.5 rounded-xl bg-[#0084ff] text-white font-bold hover:bg-[#0073e0] shadow-md shadow-blue-500/20 transition">
+            💾 Akkauntni Saqlash
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= ROLE EDIT MODAL ================= -->
+  <div id="roleModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden transition-opacity">
+    <div class="w-full max-w-md bg-[#0c162c] border border-[#1b3464] rounded-t-3xl sm:rounded-2xl p-5 space-y-4">
+      
+      <div class="flex items-center justify-between border-b border-[#172c54] pb-3">
+        <h3 class="font-extrabold text-sm text-white">
+          ⚡ Rol va Obyekt Biriktirish
+        </h3>
+        <button onclick="closeRoleModal()" class="w-7 h-7 rounded-full bg-[#152649] text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold">
+          ✕
+        </button>
+      </div>
+
+      <div class="p-3 rounded-xl bg-[#070c18] border border-[#152649]">
+        <div id="roleModalUserName" class="font-extrabold text-sm text-white"></div>
+        <div id="roleModalUserChatId" class="text-[11px] text-cyan-400 font-mono mt-0.5"></div>
+      </div>
+
+      <form id="roleForm" onsubmit="handleRoleFormSubmit(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="roleFormChatId" value="">
+
+        <!-- Organization -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Tegishli Obyekt (Universitet):</label>
+          <select id="roleFormOrg" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="0">Tanlanmagan (Barcha obyektlar)</option>
+          </select>
+        </div>
+
+        <!-- Role Select -->
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Biriktiriladigan Rol:</label>
+          <select id="roleFormRole" onchange="handleRoleSelectChange()" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="direktor">👔 Bosh Direktor (Tashkilot xodimlari va davomat)</option>
+            <option value="buxgalter">🧮 Bosh Buxgalter (Tabel & Davomat)</option>
+            <option value="otdel_kadr">💼 Otdel Kadr (HR - Faqat xodimlarni ko'radi)</option>
+            <option value="admin">👑 Bosh Admin / Rahbariyat</option>
+            <option value="tutor">🎓 Tyutor (Universitet - Faqat o'z guruhi)</option>
+            <option value="dekan">🏛 Dekan (Universitet - Fakultet)</option>
+            <option value="rejected">❌ Bloklash (Ruxsat yo'q)</option>
+          </select>
+        </div>
+
+        <!-- Group Select (for Tutor) -->
+        <div id="roleGroupContainer" class="hidden">
+          <label class="block text-slate-400 font-semibold mb-1">Tyutor guruhi:</label>
+          <select id="roleFormGroup" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="0">Guruhni tanlang...</option>
+          </select>
+        </div>
+
+        <!-- Faculty Select (for Dean) -->
+        <div id="roleFacultyContainer" class="hidden">
+          <label class="block text-slate-400 font-semibold mb-1">Dekan fakulteti:</label>
+          <select id="roleFormFaculty" class="w-full px-3 py-2.5 rounded-xl bg-[#070c18] border border-[#172c54] text-white focus:outline-none focus:border-cyan-400">
+            <option value="0">Fakultetni tanlang...</option>
+          </select>
+        </div>
+
+        <div class="pt-3 flex gap-2">
+          <button type="button" onclick="closeRoleModal()" class="flex-1 py-2.5 rounded-xl bg-[#152649] text-slate-300 font-bold hover:bg-[#1c325e] transition">
+            Bekor qilish
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-[#0084ff] text-white font-bold hover:bg-[#0073e0] shadow-md shadow-blue-500/20 transition">
+            Rolni Saqlash
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // Initialize Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      if (tg.initDataUnsafe?.user) {
+        document.getElementById('superadminBadge').innerHTML = 
+          `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${tg.initDataUnsafe.user.first_name || 'Superadmin'}`;
+      }
+    }
+
+    let organizations = [];
+    let systemAccounts = [];
+    let telegramUsers = [];
+    let formOptions = { groups: [], faculties: [], organizations: [] };
+
+    // Switch Tabs
+    function switchTab(tabId) {
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+
+      ['orgs', 'roles', 'apps'].forEach(t => {
+        const btn = document.getElementById(`tabBtn-${t}`);
+        const content = document.getElementById(`tabContent-${t}`);
+        if (t === tabId) {
+          btn.className = "flex-1 py-2 text-xs font-bold rounded-xl transition active-tab";
+          content.classList.remove('hidden');
+        } else {
+          btn.className = "flex-1 py-2 text-xs font-bold rounded-xl transition text-slate-400 hover:text-white bg-[#0f1d38]";
+          content.classList.add('hidden');
+        }
+      });
+
+      if (tabId === 'orgs') loadOrganizations();
+      if (tabId === 'roles') loadAccountsAndUsers();
+    }
+
+    // Load Form Options (Groups, Faculties, Organizations)
+    async function loadOptions() {
+      try {
+        const res = await fetch('/api/v1/master/options');
+        formOptions = await res.json();
+        
+        // Populate Org Select in Role Modal & Account Modal
+        const orgSelect = document.getElementById('roleFormOrg');
+        const accOrgSelect = document.getElementById('formAccOrg');
+        orgSelect.innerHTML = '<option value="0">Tanlanmagan (Barchasi)</option>';
+        accOrgSelect.innerHTML = '<option value="0">Tashkilotni tanlang...</option>';
+        formOptions.organizations.forEach(o => {
+          orgSelect.innerHTML += `<option value="${o.id}">${o.name}</option>`;
+          accOrgSelect.innerHTML += `<option value="${o.id}">${o.name}</option>`;
+        });
+
+        // Populate Group Select
+        const grpSelect = document.getElementById('roleFormGroup');
+        const accGrpSelect = document.getElementById('formAccGroup');
+        grpSelect.innerHTML = '<option value="0">Guruhni tanlang...</option>';
+        accGrpSelect.innerHTML = '<option value="0">Guruhni tanlang...</option>';
+        formOptions.groups.forEach(g => {
+          grpSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+          accGrpSelect.innerHTML += `<option value="${g.id}">${g.name}</option>`;
+        });
+
+        // Populate Faculty Select
+        const facSelect = document.getElementById('roleFormFaculty');
+        const accFacSelect = document.getElementById('formAccFaculty');
+        facSelect.innerHTML = '<option value="0">Fakultetni tanlang...</option>';
+        accFacSelect.innerHTML = '<option value="0">Fakultetni tanlang...</option>';
+        formOptions.faculties.forEach(f => {
+          facSelect.innerHTML += `<option value="${f.id}">${f.name}</option>`;
+          accFacSelect.innerHTML += `<option value="${f.id}">${f.name}</option>`;
+        });
+      } catch (e) {
+        console.error("Options error:", e);
+      }
+    }
+
+    // Load Organizations
+    async function loadOrganizations() {
+      const loading = document.getElementById('orgsLoading');
+      const list = document.getElementById('orgsList');
+      loading.classList.remove('hidden');
+      list.classList.add('hidden');
+
+      try {
+        const res = await fetch('/api/v1/master/organizations');
+        organizations = await res.json();
+        renderOrganizations();
+      } catch (err) {
+        list.innerHTML = `<div class="p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs text-center">Xatolik: Obyektlarni yuklab bo'lmadi!</div>`;
+      } finally {
+        loading.classList.add('hidden');
+        list.classList.remove('hidden');
+      }
+    }
+
+    function renderOrganizations() {
+      const list = document.getElementById('orgsList');
+      if (organizations.length === 0) {
+        list.innerHTML = `
+          <div class="py-12 text-center text-slate-400 text-xs">
+            🏢 Hozircha birorta obyekt kiritilmagan.<br>
+            "Yangi Obyekt" tugmasini bosing.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = organizations.map(org => {
+        const logoSrc = org.logo_url || '/logo.png';
+        const modulesList = (org.modules_enabled || '').split(',').map(m => `<span class="px-2 py-0.5 rounded-md bg-[#16294d] text-[10px] text-cyan-300 font-mono">${m.trim()}</span>`).join(' ');
+        const typeBadge = (org.org_type === 'company')
+          ? '<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">🏢 Idora / Tashkilot</span>'
+          : '<span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 text-[10px] font-bold">🎓 Universitet / Maktab</span>';
+
+        return `
+          <div class="p-4 rounded-2xl bg-[#0c162c] border border-[#172c54] space-y-3 shadow-md hover:border-cyan-500/40 transition">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-12 h-12 rounded-xl bg-[#070c18] border border-cyan-500/20 p-1 flex items-center justify-center shrink-0">
+                  <img src="${logoSrc}" alt="${org.name}" class="w-full h-full object-contain" onerror="this.src='/logo.png'">
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h4 class="font-extrabold text-sm text-white truncate" title="${org.name}">${org.name}</h4>
+                    ${typeBadge}
+                  </div>
+                  <span class="text-[11px] text-cyan-400 font-mono">ID: ${org.id} | Kod: ${org.code || '-'}</span>
+                </div>
+              </div>
+              <button onclick="editOrg(${org.id})" class="px-2.5 py-1 rounded-lg bg-[#152649] text-cyan-400 hover:text-white text-xs font-bold shrink-0 transition">
+                ✏️ Tahrirlash
+              </button>
+            </div>
+
+            <!-- Credentials Box -->
+            <div class="p-3 rounded-xl bg-[#070c18] border border-[#142340] grid grid-cols-2 gap-2 text-[11px]">
+              <div>
+                <span class="text-slate-500 block">Desktop & APK Login:</span>
+                <span class="font-mono font-bold text-slate-200">${org.admin_username}</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block">Parol:</span>
+                <span class="font-mono font-bold text-emerald-400">${org.admin_password}</span>
+              </div>
+            </div>
+
+            <!-- Enabled Modules -->
+            <div>
+              <span class="text-[10px] text-slate-400 block mb-1">Faollashtirilgan Dasturlar:</span>
+              <div class="flex flex-wrap gap-1">
+                ${modulesList || '<span class="text-slate-500 text-[10px]">Barchasi</span>'}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Load Accounts & Telegram Users
+    async function loadAccountsAndUsers() {
+      const loading = document.getElementById('accountsLoading');
+      const accList = document.getElementById('accountsList');
+      loading.classList.remove('hidden');
+      accList.classList.add('hidden');
+
+      try {
+        const [accRes, userRes] = await Promise.all([
+          fetch('/api/v1/master/accounts'),
+          fetch('/api/v1/master/users')
+        ]);
+        systemAccounts = await accRes.json();
+        telegramUsers = await userRes.json();
+
+        renderAccounts();
+        renderTelegramUsers();
+      } catch (err) {
+        accList.innerHTML = `<div class="p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs text-center">Xatolik: Ma'lumotlarni yuklab bo'lmadi!</div>`;
+      } finally {
+        loading.classList.add('hidden');
+        accList.classList.remove('hidden');
+      }
+    }
+
+    // Role Badges Helper
+    const roleBadges = {
+      "superadmin": `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold">👑 Superadmin</span>`,
+      "admin": `<span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-cyan-300 text-[10px] font-bold">👑 Rahbariyat</span>`,
+      "direktor": `<span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">👔 Direktor</span>`,
+      "buxgalter": `<span class="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 text-[10px] font-bold">🧮 Buxgalter</span>`,
+      "otdel_kadr": `<span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold">💼 Otdel Kadr</span>`,
+      "tutor": `<span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">🎓 Tyutor</span>`,
+      "dekan": `<span class="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold">🏛 Dekan</span>`,
+      "operator": `<span class="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold">🛡 Operator</span>`,
+      "pending": `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold animate-pulse">⏳ Kutilmoqda</span>`,
+      "rejected": `<span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 text-[10px] font-bold">❌ Bloklangan</span>`
+    };
+
+    function renderAccounts() {
+      const list = document.getElementById('accountsList');
+      if (!systemAccounts || systemAccounts.length === 0) {
+        list.innerHTML = `
+          <div class="py-8 text-center text-slate-400 text-xs bg-[#0c162c] rounded-2xl border border-[#172c54] p-4">
+            👤 Hozircha maxsus foydalanuvchi akkauntlari yaratilmagan.<br>
+            Yuqoridagi <b>"➕ Yangi Foydalanuvchi"</b> tugmasini bosib, Desktop, APK yoki Bot uchun login/parol yarating.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = systemAccounts.map(acc => {
+        const badge = roleBadges[acc.role] || `<span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px] font-bold">${acc.role}</span>`;
+        let extraInfo = '';
+        if (acc.role === 'tutor' && acc.assigned_group_name) {
+          extraInfo = `• Guruh: <b>${acc.assigned_group_name}</b>`;
+        } else if (acc.role === 'dekan' && acc.assigned_faculty_name) {
+          extraInfo = `• Fakultet: <b>${acc.assigned_faculty_name}</b>`;
+        }
+
+        // Apps Badges
+        const apps = (acc.allowed_apps || '').split(',').map(a => a.trim()).filter(Boolean);
+        const hasAppAccess = apps.includes('desktop') || apps.includes('android');
+        const isBotOnly = !hasAppAccess && apps.includes('bot');
+
+        let appBadges = '';
+        if (apps.includes('desktop')) appBadges += `<span class="px-1.5 py-0.5 rounded bg-blue-950/80 border border-blue-500/30 text-[10px] text-cyan-300 font-medium">🖥 Desktop</span> `;
+        if (apps.includes('android')) appBadges += `<span class="px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/30 text-[10px] text-emerald-300 font-medium">📱 APK</span> `;
+        if (apps.includes('bot')) appBadges += `<span class="px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/30 text-[10px] text-purple-300 font-medium">🤖 Bot</span> `;
+
+        // Modules Badges
+        const mods = (acc.allowed_modules || '').split(',').map(m => `<span class="px-1.5 py-0.5 rounded bg-[#152649] text-[9px] text-slate-300 font-mono">${m.trim()}</span>`).join(' ');
+
+        return `
+          <div class="p-3.5 rounded-2xl bg-[#0c162c] border border-[#172c54] space-y-3 shadow-md">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-extrabold text-sm text-white flex items-center gap-1.5">
+                  <span>👤</span> ${acc.full_name}
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">
+                  🏢 <b>${acc.organization_name || 'Barcha obyektlar'}</b> ${extraInfo ? `| ${extraInfo}` : ''}
+                </div>
+              </div>
+              <div>${badge}</div>
+            </div>
+
+            ${isBotOnly ? `
+              <!-- Bot Only Box (Login/Parol shart emas) -->
+              <div class="p-2.5 rounded-xl bg-[#070c18] border border-purple-500/40 space-y-1.5 text-xs">
+                <div class="flex items-center justify-between text-purple-300 font-bold text-[11px]">
+                  <span class="flex items-center gap-1">🤖 Faqat Telegram Bot</span>
+                  <span class="text-[10px] text-slate-400 font-normal">Login/parol shart emas</span>
+                </div>
+                <div class="flex items-center justify-between pt-1 border-t border-[#13223f] text-xs">
+                  <span class="text-slate-400 font-medium">Telegram ID:</span>
+                  <div class="flex items-center gap-1.5">
+                    <code class="font-bold text-cyan-300 font-mono">${acc.telegram_chat_id || 'Kiritilmagan'}</code>
+                    ${acc.telegram_chat_id ? `
+                      <button onclick="copyText('${acc.telegram_chat_id}', 'Telegram ID')" class="text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-[#152649]">
+                        📋 Nusxa
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            ` : `
+              <!-- Credentials Box for Desktop / APK -->
+              <div class="p-2.5 rounded-xl bg-[#070c18] border border-[#152649] space-y-1.5 text-xs">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 text-slate-300">
+                    <span class="text-slate-500 font-medium">Login:</span>
+                    <code class="font-bold text-cyan-300">${acc.username}</code>
+                  </div>
+                  <button onclick="copyText('${acc.username}', 'Login')" class="text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-[#152649]">
+                    📋 Nusxa
+                  </button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 text-slate-300">
+                    <span class="text-slate-500 font-medium">Parol:</span>
+                    <code id="pwd-${acc.id}" class="font-bold text-amber-300 tracking-wider">••••••••</code>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button onclick="togglePassword(${acc.id}, '${acc.password}')" id="pwdBtn-${acc.id}" class="text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-[#152649]">
+                      👁️ Ko'rish
+                    </button>
+                    <button onclick="copyText('${acc.password}', 'Parol')" class="text-[10px] text-slate-400 hover:text-white px-1.5 py-0.5 rounded bg-[#152649]">
+                      📋 Nusxa
+                    </button>
+                  </div>
+                </div>
+
+                ${acc.telegram_chat_id ? `
+                  <div class="flex items-center justify-between pt-1 border-t border-[#13223f] text-[10px]">
+                    <span class="text-slate-500">Telegram:</span>
+                    <span class="text-cyan-400 font-mono">${acc.telegram_chat_id}</span>
+                  </div>
+                ` : ''}
+              </div>
+            `}
+            </div>
+
+            <!-- Apps & Modules -->
+            <div class="space-y-1 text-[11px]">
+              <div class="flex items-center gap-1">
+                <span class="text-slate-500 text-[10px]">Dasturlar:</span>
+                <div class="flex flex-wrap gap-1">${appBadges || '<span class="text-slate-500">Belgilanmagan</span>'}</div>
+              </div>
+              <div class="flex items-center gap-1">
+                <span class="text-slate-500 text-[10px]">Modullar:</span>
+                <div class="flex flex-wrap gap-1">${mods || '<span class="text-slate-500">Cheklanmagan</span>'}</div>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2 pt-1 border-t border-[#13223f]">
+              <button onclick="editAccount(${acc.id})" class="flex-1 py-1.5 rounded-xl bg-[#152649] hover:bg-[#1a3160] text-cyan-300 font-bold text-xs transition flex items-center justify-center gap-1">
+                <span>✏️</span> Tahrirlash
+              </button>
+              <button onclick="deleteAccount(${acc.id})" class="px-3 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-bold text-xs transition">
+                🗑️ O'chirish
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTelegramUsers() {
+      const list = document.getElementById('telegramUsersList');
+      const badge = document.getElementById('telegramUsersCountBadge');
+      badge.innerText = `Jami: ${telegramUsers.length} kishi`;
+
+      if (telegramUsers.length === 0) {
+        list.innerHTML = `
+          <div class="py-4 text-center text-slate-500 text-xs">
+            Hozircha bot orqali hech kim start bosmagan.
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = telegramUsers.map(user => {
+        const uBadge = roleBadges[user.role] || `<span class="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[10px] font-bold">${user.role}</span>`;
+        return `
+          <div class="p-2.5 rounded-xl bg-[#091122] border border-[#152649] flex items-center justify-between gap-2">
+            <div>
+              <div class="font-bold text-xs text-white">${user.first_name || ''} ${user.last_name || ''}</div>
+              <div class="text-[10px] text-slate-400 font-mono">ID: ${user.chat_id} ${user.username ? '@' + user.username : ''}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <div>${uBadge}</div>
+              <button onclick="openRoleModal('${user.chat_id}', '${(user.first_name || '').replace("'", "")}', '${user.role}', ${user.organization_id || 0}, ${user.assigned_group_id || 0}, ${user.assigned_faculty_id || 0})" 
+                class="px-2 py-1 rounded-lg bg-[#152649] hover:bg-[#1a3160] text-cyan-300 font-bold text-[10px] transition">
+                ⚡ Rol
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Toggle Password Visibility
+    function togglePassword(id, actualPassword) {
+      const span = document.getElementById(`pwd-${id}`);
+      const btn = document.getElementById(`pwdBtn-${id}`);
+      if (span.innerText === '••••••••') {
+        span.innerText = actualPassword;
+        btn.innerText = "🙈 Yashirish";
+      } else {
+        span.innerText = '••••••••';
+        btn.innerText = "👁️ Ko'rish";
+      }
+    }
+
+    // Copy to Clipboard
+    function copyText(text, label) {
+      navigator.clipboard.writeText(text);
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+      alert(`✅ ${label} nusxalandi: ${text}`);
+    }
+
+    // Modal Operations: Account
+    function openAccountModal(accId = null) {
+      const modal = document.getElementById('accountModal');
+      const title = document.getElementById('accountModalTitle');
+      const idInput = document.getElementById('formAccId');
+
+      if (!accId) {
+        title.innerHTML = "<span>👤</span> Yangi Foydalanuvchi Qo'shish";
+        idInput.value = "";
+        document.getElementById('formAccFullName').value = "";
+        document.getElementById('formAccOrg').value = "0";
+        document.getElementById('formAccRole').value = "otdel_kadr";
+        document.getElementById('formAccTelegram').value = "";
+
+        // Default apps
+        document.getElementById('accAppDesktop').checked = true;
+        document.getElementById('accAppAndroid').checked = true;
+        document.getElementById('accAppBot').checked = true;
+
+        // Default modules for HR
+        document.getElementById('accModAttendance').checked = true;
+        document.getElementById('accModStaff').checked = true;
+        document.getElementById('accModStudents').checked = false;
+        document.getElementById('accModStructure').checked = false;
+        document.getElementById('accModSettings').checked = false;
+
+        handleAccRoleChange();
+        generateRandomCredentials();
+        handleAppSelectionChange();
+      } else {
+        const acc = systemAccounts.find(a => a.id === accId);
+        if (!acc) return;
+
+        title.innerHTML = "<span>✏️</span> Foydalanuvchini Tahrirlash";
+        idInput.value = acc.id;
+        document.getElementById('formAccFullName').value = acc.full_name;
+        document.getElementById('formAccOrg').value = acc.organization_id || "0";
+        document.getElementById('formAccRole').value = acc.role;
+        document.getElementById('formAccUsername').value = acc.username;
+        document.getElementById('formAccPassword').value = acc.password;
+        document.getElementById('formAccTelegram').value = acc.telegram_chat_id || "";
+
+        handleAccRoleChange();
+        if (acc.role === 'tutor') document.getElementById('formAccGroup').value = acc.assigned_group_id || "0";
+        if (acc.role === 'dekan') document.getElementById('formAccFaculty').value = acc.assigned_faculty_id || "0";
+
+        // Apps
+        const apps = (acc.allowed_apps || '').split(',');
+        document.getElementById('accAppDesktop').checked = apps.includes('desktop');
+        document.getElementById('accAppAndroid').checked = apps.includes('android');
+        document.getElementById('accAppBot').checked = apps.includes('bot');
+
+        // Modules
+        const mods = (acc.allowed_modules || '').split(',');
+        document.getElementById('accModAttendance').checked = mods.includes('attendance');
+        document.getElementById('accModStaff').checked = mods.includes('staff');
+        document.getElementById('accModStudents').checked = mods.includes('students');
+        document.getElementById('accModStructure').checked = mods.includes('structure');
+        document.getElementById('accModSettings').checked = mods.includes('settings');
+
+        handleAppSelectionChange();
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeAccountModal() {
+      document.getElementById('accountModal').classList.add('hidden');
+    }
+
+    function handleAccRoleChange() {
+      const role = document.getElementById('formAccRole').value;
+      const grpCont = document.getElementById('accGroupContainer');
+      const facCont = document.getElementById('accFacultyContainer');
+      const studentsWrapper = document.getElementById('accModStudentsWrapper');
+      const studentsCheck = document.getElementById('accModStudents');
+
+      if (role === 'tutor') {
+        grpCont.classList.remove('hidden');
+        facCont.classList.add('hidden');
+        studentsWrapper.classList.remove('opacity-40', 'pointer-events-none');
+      } else if (role === 'dekan') {
+        facCont.classList.remove('hidden');
+        grpCont.classList.add('hidden');
+        studentsWrapper.classList.remove('opacity-40', 'pointer-events-none');
+      } else if (role === 'otdel_kadr' || role === 'direktor' || role === 'buxgalter') {
+        // HR, Direktor, Buxgalter never deal with students
+        grpCont.classList.add('hidden');
+        facCont.classList.add('hidden');
+        studentsCheck.checked = false;
+        studentsWrapper.classList.add('opacity-40', 'pointer-events-none');
+        if (role === 'direktor') {
+          document.getElementById('accModAttendance').checked = true;
+          document.getElementById('accModStaff').checked = true;
+          document.getElementById('accModStructure').checked = true;
+        } else if (role === 'buxgalter') {
+          document.getElementById('accModAttendance').checked = true;
+          document.getElementById('accModStaff').checked = true;
+          document.getElementById('accModStructure').checked = false;
+        }
+      } else {
+        grpCont.classList.add('hidden');
+        facCont.classList.add('hidden');
+        studentsWrapper.classList.remove('opacity-40', 'pointer-events-none');
+      }
+    }
+
+    function handleAppSelectionChange() {
+      const hasDesktop = document.getElementById('accAppDesktop').checked;
+      const hasAndroid = document.getElementById('accAppAndroid').checked;
+      const hasBot = document.getElementById('accAppBot').checked;
+
+      const credContainer = document.getElementById('accCredentialsContainer');
+      const telegramContainer = document.getElementById('accTelegramContainer');
+      const usernameInput = document.getElementById('formAccUsername');
+      const passwordInput = document.getElementById('formAccPassword');
+      const telegramInput = document.getElementById('formAccTelegram');
+      const telegramBadge = document.getElementById('accTelegramRequiredBadge');
+
+      const needsLogin = hasDesktop || hasAndroid;
+
+      // 1. Desktop yoki APK tanlansa -> Login va Parol maydonlarini chiqarish
+      if (needsLogin) {
+        credContainer.classList.remove('hidden');
+        usernameInput.required = true;
+        passwordInput.required = true;
+        if (!usernameInput.value.trim()) {
+          generateRandomCredentials();
+        }
+      } else {
+        // Faqat Bot bo'lsa -> Login va Parol yashiriladi
+        credContainer.classList.add('hidden');
+        usernameInput.required = false;
+        passwordInput.required = false;
+      }
+
+      // 2. Bot tanlansa -> Telegram Chat ID maydonini chiqarish
+      if (hasBot) {
+        telegramContainer.classList.remove('hidden');
+        if (!needsLogin) {
+          // Faqat bot bo'lsa, chat_id majburiy
+          telegramInput.required = true;
+          telegramBadge.innerText = "* Majburiy";
+          telegramBadge.className = "text-[10px] text-amber-300 font-mono font-bold px-1.5 py-0.5 rounded bg-amber-900/40";
+        } else {
+          // Ilovalar bilan birga bo'lsa, ixtiyoriy
+          telegramInput.required = false;
+          telegramBadge.innerText = "(Ixtiyoriy)";
+          telegramBadge.className = "text-[10px] text-slate-400 font-mono px-1.5 py-0.5 rounded bg-slate-800";
+        }
+      } else {
+        telegramContainer.classList.add('hidden');
+        telegramInput.required = false;
+      }
+    }
+
+    function generateRandomCredentials() {
+      const role = document.getElementById('formAccRole').value;
+      const prefixes = {
+        direktor: 'dir',
+        buxgalter: 'bux',
+        otdel_kadr: 'kadr',
+        tutor: 'tutor',
+        dekan: 'dekan',
+        admin: 'admin',
+        operator: 'oper'
+      };
+      const prefix = prefixes[role] || 'user';
+      const randNum = Math.floor(100 + Math.random() * 900);
+      const randPass = Math.floor(1000 + Math.random() * 9000);
+
+      document.getElementById('formAccUsername').value = `${prefix}_${randNum}`;
+      document.getElementById('formAccPassword').value = `Burgood${randPass}!`;
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    }
+
+    async function handleAccountFormSubmit(e) {
+      e.preventDefault();
+      const accId = document.getElementById('formAccId').value;
+      const submitBtn = document.getElementById('formAccSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Saqlanmoqda...";
+
+      const hasDesktop = document.getElementById('accAppDesktop').checked;
+      const hasAndroid = document.getElementById('accAppAndroid').checked;
+      const hasBot = document.getElementById('accAppBot').checked;
+
+      if (!hasDesktop && !hasAndroid && !hasBot) {
+        alert("⚠️ Iltimos, kamida bitta dasturni (Desktop, APK yoki Bot) tanlang!");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "💾 Akkauntni Saqlash";
+        return;
+      }
+
+      const needsLogin = hasDesktop || hasAndroid;
+      const telegramVal = document.getElementById('formAccTelegram').value.trim();
+
+      if (!needsLogin && hasBot && !telegramVal) {
+        alert("⚠️ Foydalanuvchiga faqat Bot ruxsati berilgani uchun uning Telegram Chat ID yoki Username'ini kiritishingiz shart!");
+        submitBtn.disabled = false;
+        submitBtn.innerText = "💾 Akkauntni Saqlash";
+        return;
+      }
+
+      let username = document.getElementById('formAccUsername').value.trim();
+      let password = document.getElementById('formAccPassword').value.trim();
+
+      if (!needsLogin) {
+        // Faqat bot bo'lsa va login/parol yozilmagan bo'lsa, tizim avtomatik biriktiradi
+        if (!username) username = `bot_${telegramVal.replace('@', '') || Math.floor(1000 + Math.random() * 9000)}`;
+        if (!password) password = `Burgood${Math.floor(1000 + Math.random() * 9000)}!`;
+      }
+
+      const allowedApps = [];
+      if (hasDesktop) allowedApps.push('desktop');
+      if (hasAndroid) allowedApps.push('android');
+      if (hasBot) allowedApps.push('bot');
+
+      const allowedModules = [];
+      if (document.getElementById('accModAttendance').checked) allowedModules.push('attendance');
+      if (document.getElementById('accModStaff').checked) allowedModules.push('staff');
+      if (document.getElementById('accModStudents').checked) allowedModules.push('students');
+      if (document.getElementById('accModStructure').checked) allowedModules.push('structure');
+      if (document.getElementById('accModSettings').checked) allowedModules.push('settings');
+
+      const orgId = parseInt(document.getElementById('formAccOrg').value) || null;
+      const grpId = parseInt(document.getElementById('formAccGroup').value) || null;
+      const facId = parseInt(document.getElementById('formAccFaculty').value) || null;
+
+      const payload = {
+        full_name: document.getElementById('formAccFullName').value.trim(),
+        username: username,
+        password: password,
+        role: document.getElementById('formAccRole').value,
+        organization_id: orgId,
+        assigned_group_id: grpId,
+        assigned_faculty_id: facId,
+        allowed_apps: allowedApps.join(','),
+        allowed_modules: allowedModules.join(','),
+        telegram_chat_id: telegramVal || null
+      };
+
+      try {
+        if (!accId) {
+          // Create
+          const res = await fetch('/api/v1/master/accounts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Xatolik yuz berdi");
+        } else {
+          // Update
+          const res = await fetch(`/api/v1/master/accounts/${accId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Xatolik yuz berdi");
+        }
+
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        closeAccountModal();
+        await loadAccountsAndUsers();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "💾 Akkauntni Saqlash";
+      }
+    }
+
+    function editAccount(accId) {
+      openAccountModal(accId);
+    }
+
+    async function deleteAccount(accId) {
+      if (!confirm("Haqiqatan ham ushbu foydalanuvchi akkauntini o'chirmoqchimisiz?")) return;
+
+      try {
+        const res = await fetch(`/api/v1/master/accounts/${accId}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "O'chirishda xatolik yuz berdi");
+
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        await loadAccountsAndUsers();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+
+    // Modal Operations: Org
+    function setOrgTypeInModal(type) {
+      if (type === 'company') {
+        const rad = document.getElementById('orgTypeCompany');
+        if (rad) rad.checked = true;
+        document.getElementById('modStudents').checked = false;
+        document.getElementById('modStructure').checked = true;
+        document.getElementById('modStaff').checked = true;
+        document.getElementById('modAttendance').checked = true;
+        document.getElementById('modDashboard').checked = true;
+        document.getElementById('modSettings').checked = true;
+      } else {
+        const rad = document.getElementById('orgTypeUniversity');
+        if (rad) rad.checked = true;
+        document.getElementById('modStudents').checked = true;
+        document.getElementById('modStructure').checked = true;
+        document.getElementById('modStaff').checked = true;
+        document.getElementById('modAttendance').checked = true;
+        document.getElementById('modDashboard').checked = true;
+        document.getElementById('modSettings').checked = true;
+      }
+    }
+
+    function openOrgModal() {
+      document.getElementById('orgModalTitle').innerHTML = "🏢 Yangi Obyekt Qo'shish";
+      document.getElementById('formOrgId').value = "";
+      document.getElementById('formOrgName').value = "";
+      document.getElementById('formOrgCode').value = "";
+      document.getElementById('formOrgAddress').value = "";
+      document.getElementById('formOrgLogin').value = "admin";
+      document.getElementById('formOrgPassword').value = "admin123";
+      document.getElementById('formOrgLogoFile').value = "";
+
+      setOrgTypeInModal('university');
+      document.getElementById('orgModal').classList.remove('hidden');
+    }
+
+    function editOrg(orgId) {
+      const org = organizations.find(o => o.id === orgId);
+      if (!org) return;
+
+      document.getElementById('orgModalTitle').innerHTML = "✏️ Obyektni Tahrirlash";
+      document.getElementById('formOrgId').value = org.id;
+      document.getElementById('formOrgName').value = org.name;
+      document.getElementById('formOrgCode').value = org.code || "";
+      document.getElementById('formOrgAddress').value = org.address || "";
+      document.getElementById('formOrgLogin').value = org.admin_username || "admin";
+      document.getElementById('formOrgPassword').value = org.admin_password || "admin123";
+      document.getElementById('formOrgLogoFile').value = "";
+
+      const oType = org.org_type || 'university';
+      if (oType === 'company') {
+        const rad = document.getElementById('orgTypeCompany');
+        if (rad) rad.checked = true;
+      } else {
+        const rad = document.getElementById('orgTypeUniversity');
+        if (rad) rad.checked = true;
+      }
+
+      const mods = org.modules_enabled || "";
+      document.getElementById('modDashboard').checked = mods.includes('dashboard');
+      document.getElementById('modAttendance').checked = mods.includes('attendance');
+      document.getElementById('modStaff').checked = mods.includes('staff');
+      document.getElementById('modStudents').checked = mods.includes('students');
+      document.getElementById('modStructure').checked = mods.includes('structure');
+      document.getElementById('modSettings').checked = mods.includes('settings');
+
+      document.getElementById('orgModal').classList.remove('hidden');
+    }
+
+    function closeOrgModal() {
+      document.getElementById('orgModal').classList.add('hidden');
+    }
+
+    async function handleOrgFormSubmit(e) {
+      e.preventDefault();
+      const orgId = document.getElementById('formOrgId').value;
+      const submitBtn = document.getElementById('formOrgSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Saqlanmoqda...";
+
+      const enabledModules = [];
+      if (document.getElementById('modDashboard').checked) enabledModules.push('dashboard');
+      if (document.getElementById('modAttendance').checked) enabledModules.push('attendance');
+      if (document.getElementById('modStaff').checked) enabledModules.push('staff');
+      if (document.getElementById('modStudents').checked) enabledModules.push('students');
+      if (document.getElementById('modStructure').checked) enabledModules.push('structure');
+      if (document.getElementById('modSettings').checked) enabledModules.push('settings');
+
+      const orgType = document.querySelector('input[name="formOrgType"]:checked')?.value || 'university';
+
+      const payload = {
+        name: document.getElementById('formOrgName').value.trim(),
+        code: document.getElementById('formOrgCode').value.trim(),
+        org_type: orgType,
+        address: document.getElementById('formOrgAddress').value.trim(),
+        admin_username: document.getElementById('formOrgLogin').value.trim(),
+        admin_password: document.getElementById('formOrgPassword').value.trim(),
+        modules_enabled: enabledModules.join(',')
+      };
+
+      try {
+        let savedOrgId = orgId;
+        if (!orgId) {
+          // Create
+          const res = await fetch('/api/v1/master/organizations', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Xatolik yuz berdi");
+          savedOrgId = data.organization.id;
+        } else {
+          // Update
+          const res = await fetch(`/api/v1/master/organizations/${orgId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Xatolik yuz berdi");
+        }
+
+        // Upload logo if selected
+        const logoFile = document.getElementById('formOrgLogoFile').files[0];
+        if (logoFile && savedOrgId) {
+          const formData = new FormData();
+          formData.append('file', logoFile);
+          await fetch(`/api/v1/master/organizations/${savedOrgId}/logo`, {
+            method: 'POST',
+            body: formData
+          });
+        }
+
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        closeOrgModal();
+        await loadOrganizations();
+        await loadOptions();
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Saqlash";
+      }
+    }
+
+    // Modal Operations: Role
+    function openRoleModal(chatId, userName, currentRole, orgId, grpId, facId) {
+      document.getElementById('roleFormChatId').value = chatId;
+      document.getElementById('roleModalUserName').innerText = userName || "Foydalanuvchi";
+      document.getElementById('roleModalUserChatId').innerText = "Telegram ID: " + chatId;
+      document.getElementById('roleFormRole').value = currentRole;
+      document.getElementById('roleFormOrg').value = orgId || 0;
+      document.getElementById('roleFormGroup').value = grpId || 0;
+      document.getElementById('roleFormFaculty').value = facId || 0;
+
+      handleRoleSelectChange();
+      document.getElementById('roleModal').classList.remove('hidden');
+    }
+
+    function closeRoleModal() {
+      document.getElementById('roleModal').classList.add('hidden');
+    }
+
+    function handleRoleSelectChange() {
+      const role = document.getElementById('roleFormRole').value;
+      const grpCont = document.getElementById('roleGroupContainer');
+      const facCont = document.getElementById('roleFacultyContainer');
+
+      if (role === 'tutor') {
+        grpCont.classList.remove('hidden');
+        facCont.classList.add('hidden');
+      } else if (role === 'dekan') {
+        facCont.classList.remove('hidden');
+        grpCont.classList.add('hidden');
+      } else {
+        grpCont.classList.add('hidden');
+        facCont.classList.add('hidden');
+      }
+    }
+
+    async function handleRoleFormSubmit(e) {
+      e.preventDefault();
+      const chatId = document.getElementById('roleFormChatId').value;
+      const role = document.getElementById('roleFormRole').value;
+      const orgId = parseInt(document.getElementById('roleFormOrg').value) || null;
+      const grpId = parseInt(document.getElementById('roleFormGroup').value) || null;
+      const facId = parseInt(document.getElementById('roleFormFaculty').value) || null;
+
+      try {
+        const res = await fetch(`/api/v1/master/users/${chatId}/role`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            role: role,
+            organization_id: orgId,
+            assigned_group_id: grpId,
+            assigned_faculty_id: facId
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Xatolik yuz berdi");
+
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+        closeRoleModal();
+        await loadAccountsAndUsers();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Initial Load
+    loadOptions();
+    loadOrganizations();
+  </script>
+</body>
+</html>
